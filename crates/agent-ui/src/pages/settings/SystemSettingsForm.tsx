@@ -60,6 +60,7 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 
 import { SidebarShortcutsSection } from "./SidebarShortcutsSection";
+import { parseSystemProxyPortDraft } from "./systemProxyInput";
 
 const FONT_SCALE_OPTIONS = [0.9, 1, 1.1, 1.2] as const;
 type FontFamilySettingKey = "interfaceFontFamily" | "chatFontFamily" | "codeFontFamily";
@@ -309,7 +310,7 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
   // 会先把按钮变回可用，但落在禁用按钮上的这次 click 已被浏览器吞掉，需点两次。
   const effectiveProxyHost = (proxyHostDraft ?? systemProxy.host).trim();
   const effectiveProxyPort =
-    proxyPortDraft !== null ? Number.parseInt(proxyPortDraft, 10) : systemProxy.port;
+    proxyPortDraft !== null ? parseSystemProxyPortDraft(proxyPortDraft) : systemProxy.port;
   const proxyConfigValid =
     isValidSystemProxyHost(effectiveProxyHost) &&
     Number.isInteger(effectiveProxyPort) &&
@@ -319,6 +320,8 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
   // 配置无效且当前未启用时禁止开启开关（护栏 A）；已启用时始终允许关闭。
   const proxyNeedsConfiguration = !systemProxy.enabled && !proxyConfigValid;
   const [proxyDetailsOpen, setProxyDetailsOpen] = useState(false);
+  // 从开关进入弹窗表示"想启用"：点「完成」时配置已有效就直接开启，不必再回来点开关。
+  const [enableProxyOnDone, setEnableProxyOnDone] = useState(false);
 
   function handleProxyDialogOpenChange(open: boolean) {
     if (!open) {
@@ -326,8 +329,15 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
       commitProxyPortDraft();
       commitProxyUsernameDraft();
       commitProxyPasswordDraft();
+      setEnableProxyOnDone(false);
     }
     setProxyDetailsOpen(open);
+  }
+
+  function handleProxyDialogDone() {
+    const shouldEnable = enableProxyOnDone && proxyConfigValid;
+    handleProxyDialogOpenChange(false);
+    if (shouldEnable) patchSystemProxy({ enabled: true });
   }
 
   function patchSystemProxy(patch: Partial<SystemProxyConfig>) {
@@ -347,8 +357,7 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
 
   function commitProxyPortDraft(nextDraft = proxyPortDraft) {
     if (nextDraft !== null) {
-      const parsed = Number.parseInt(nextDraft, 10);
-      patchSystemProxy({ port: Number.isNaN(parsed) ? 0 : parsed });
+      patchSystemProxy({ port: parseSystemProxyPortDraft(nextDraft) });
       setProxyPortDraft(null);
     }
   }
@@ -488,6 +497,7 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
                 )}
                 onToggle={() => {
                   if (proxyNeedsConfiguration) {
+                    setEnableProxyOnDone(true);
                     setProxyDetailsOpen(true);
                     return;
                   }
@@ -555,7 +565,7 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
                       id="system-proxy-host"
                       className="rounded-lg"
                       value={proxyHostDraft ?? systemProxy.host}
-                      placeholder="127.0.0.1"
+                      placeholder={t("settings.systemProxyHostPlaceholder")}
                       onChange={(event) => setProxyHostDraft(event.currentTarget.value)}
                       onBlur={commitProxyHostDraft}
                     />
@@ -576,7 +586,10 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
                       value={
                         proxyPortDraft ?? (systemProxy.port > 0 ? String(systemProxy.port) : "")
                       }
-                      placeholder={systemProxy.type === "socks5" ? "1080" : "7890"}
+                      placeholder={t("settings.systemProxyPortPlaceholder").replace(
+                        "{port}",
+                        systemProxy.type === "socks5" ? "1080" : "7890",
+                      )}
                       onChange={(event) => setProxyPortDraft(event.currentTarget.value)}
                       onBlur={() => commitProxyPortDraft()}
                     />
@@ -636,9 +649,7 @@ export function SystemSettingsForm(props: SettingsSectionProps) {
                 </details>
               </DialogBody>
               <DialogFooter>
-                <Button onClick={() => handleProxyDialogOpenChange(false)}>
-                  {t("settings.systemProxyDone")}
-                </Button>
+                <Button onClick={handleProxyDialogDone}>{t("settings.systemProxyDone")}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

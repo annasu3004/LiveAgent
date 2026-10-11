@@ -267,6 +267,8 @@ export const EN_US_SETTINGS_TRANSLATIONS = {
   "settings.systemProxyType": "Proxy type",
   "settings.systemProxyHost": "Proxy host",
   "settings.systemProxyPort": "Port",
+  "settings.systemProxyHostPlaceholder": "e.g. 127.0.0.1",
+  "settings.systemProxyPortPlaceholder": "e.g. {port}",
   "settings.systemProxyUsername": "Username (optional)",
   "settings.systemProxyPassword": "Password (optional)",
   "settings.systemProxyPasswordConfigured": "Proxy password saved",

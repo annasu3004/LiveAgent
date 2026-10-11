@@ -253,6 +253,8 @@ export const ZH_CN_SETTINGS_TRANSLATIONS = {
   "settings.systemProxyType": "代理类型",
   "settings.systemProxyHost": "代理地址",
   "settings.systemProxyPort": "端口",
+  "settings.systemProxyHostPlaceholder": "例如 127.0.0.1",
+  "settings.systemProxyPortPlaceholder": "例如 {port}",
   "settings.systemProxyUsername": "用户名（可选）",
   "settings.systemProxyPassword": "密码（可选）",
   "settings.systemProxyPasswordConfigured": "代理密码已保存",
